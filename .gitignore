@@ -1,0 +1,12 @@
+# Build results
+obj/
+bin/
+
+# EF Core data
+Data/kkanban.db
+Data/*.db
+
+# VS/IDE
+.vs/
+*.user
+*.suo
