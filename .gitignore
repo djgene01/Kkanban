@@ -5,6 +5,8 @@ bin/
 # EF Core data
 Data/kkanban.db
 Data/*.db
+Data/*.db-shm
+Data/*.db-wal
 
 # VS/IDE
 .vs/

@@ -96,6 +96,9 @@ namespace Kkanban.Migrations
                     b.Property<int>("BoardColumnId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -181,7 +184,7 @@ namespace Kkanban.Migrations
             modelBuilder.Entity("Kkanban.Data.Models.CardLabel", b =>
                 {
                     b.HasOne("Kkanban.Data.Models.KanbanCard", "Card")
-                        .WithMany("Labels")
+                        .WithMany("CardLabels")
                         .HasForeignKey("CardId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -215,7 +218,7 @@ namespace Kkanban.Migrations
 
             modelBuilder.Entity("Kkanban.Data.Models.KanbanCard", b =>
                 {
-                    b.Navigation("Labels");
+                    b.Navigation("CardLabels");
                 });
 
             modelBuilder.Entity("Kkanban.Data.Models.Label", b =>
