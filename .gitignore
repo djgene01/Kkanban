@@ -7,7 +7,6 @@ Data/kkanban.db
 Data/*.db
 Data/*.db-shm
 Data/*.db-wal
-
 # VS/IDE
 .vs/
 *.user
