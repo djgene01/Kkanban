@@ -1,0 +1,50 @@
+@using Kkanban.Data.Models
+
+<div class="kanban-card" draggable="true">
+    <div class="card-labels">
+        @if (CardItem.CardLabels != null && CardItem.CardLabels.Any())
+        {
+            @foreach (var cl in CardItem.CardLabels)
+            {
+                <span class="card-label" style="background-color: @cl.Label.Colour; color: white;">
+                    @cl.Label.Name
+                </span>
+            }
+        }
+    </div>
+    <div class="card-title">@CardItem.Title</div>
+    @if (!string.IsNullOrEmpty(CardItem.Description))
+    {
+        <div class="card-description">@CardItem.Description</div>
+    }
+    @if (!string.IsNullOrEmpty(CardItem.Assignee))
+    {
+        <div class="card-assignee">&#128100; @CardItem.Assignee</div>
+    }
+    <div class="card-footer">
+        <button class="card-btn btn-icon" title="Edit" @onclick="() => OnEditClick()">&#9998;</button>
+        <button class="card-btn btn-icon" title="Archive" @onclick="() => OnArchiveClick()">&#128465;</button>
+        @if (ColumnTitle?.Contains("Done", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            <span class="done-badge">&#10003;</span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public KanbanCard CardItem { get; set; } = default!;
+    [Parameter] public string ColumnTitle { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback<int> OnEditRequested { get; set; }
+    [Parameter] public EventCallback<int> OnArchiveRequested { get; set; }
+
+    private async Task OnEditClick()
+    {
+        await OnEditRequested.InvokeAsync(CardItem.Id);
+    }
+
+    private async Task OnArchiveClick()
+    {
+        await OnArchiveRequested.InvokeAsync(CardItem.Id);
+    }
+}

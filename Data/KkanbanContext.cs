@@ -38,7 +38,7 @@ public class KkanbanContext : DbContext
 
         modelBuilder.Entity<CardLabel>()
             .HasOne(cl => cl.Card)
-            .WithMany(c => c.Labels)
+            .WithMany(c => c.CardLabels)
             .HasForeignKey(cl => cl.CardId)
             .OnDelete(DeleteBehavior.Cascade);
 

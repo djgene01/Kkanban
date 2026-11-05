@@ -1,0 +1,104 @@
+@page "/"
+@using Kkanban.Data.Models
+@using Kkanban.Services
+@inject IBoardService BoardService
+@inject ICardService CardService
+@rendermode InteractiveServer
+
+<div class="kanban-app">
+    <div class="kanban-board">
+        <div class="board-toolbar">
+            <h1 class="board-title">&#128203; Kanban Board</h1>
+            <button class="btn btn-primary" @onclick="OnAddColumn">+ Add Column</button>
+        </div>
+
+        @if (columns == null || !columns.Any())
+        {
+            <div class="empty-state">
+                <p>No columns yet. Click "+ Add Column" to get started.</p>
+            </div>
+        }
+        else
+        {
+            <div class="board-columns">
+                @foreach (var column in columns.OrderBy(c => c.Order))
+                {
+                    var columnCards = cardsByColumn.GetValueOrDefault(column.Id, Enumerable.Empty<KanbanCard>());
+                    <BoardColumnView ColumnItem="@(column)" Cards="@(columnCards)" OnCardArchived="HandleCardArchived" />
+                }
+            </div>
+        }
+
+        @if (showAddColumn)
+        {
+            <div class="modal-overlay">
+                <div class="modal">
+                    <div class="modal-header">
+                        <h3>Add New Column</h3>
+                        <button class="btn-close" @onclick="CloseAddColumn">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="newColumnTitle">Column Name</label>
+                            <input type="text" id="newColumnTitle" @bind="newColumnName" @bind:event="oninput" placeholder="e.g. Review" />
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary" @onclick="CloseAddColumn">Cancel</button>
+                        <button class="btn btn-primary" @onclick="SubmitAddColumn" disabled="@string.IsNullOrWhiteSpace(newColumnName)">Add</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private IEnumerable<BoardColumn>? columns;
+    private Dictionary<int, IEnumerable<KanbanCard>> cardsByColumn = new();
+    private bool showAddColumn;
+    private string newColumnName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBoardData();
+    }
+
+    private async Task LoadBoardData()
+    {
+        columns = await BoardService.GetAllColumnsAsync();
+        cardsByColumn = new();
+
+        if (columns != null)
+        {
+            foreach (var c in columns)
+            {
+                cardsByColumn[c.Id] = await CardService.GetCardsByColumnAsync(c.Id);
+            }
+        }
+    }
+
+    private async Task OnAddColumn()
+    {
+        newColumnName = "";
+        showAddColumn = true;
+    }
+
+    private void CloseAddColumn() => showAddColumn = false;
+
+    private async Task SubmitAddColumn()
+    {
+        if (!string.IsNullOrWhiteSpace(newColumnName))
+        {
+            await BoardService.AddColumnAsync(newColumnName.Trim());
+            await LoadBoardData();
+            showAddColumn = false;
+        }
+    }
+
+    private async Task HandleCardArchived(int cardId)
+    {
+        await CardService.ArchiveCardAsync(cardId);
+        await LoadBoardData();
+    }
+}

@@ -1,5 +1,6 @@
 using Kkanban.Components;
 using Kkanban.Data;
+using Kkanban.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,10 @@ builder.Services.AddRazorComponents()
 // Register EF Core with SQLite
 builder.Services.AddDbContext<KkanbanContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register application services
+builder.Services.AddScoped<IBoardService, BoardService>();
+builder.Services.AddScoped<ICardService, CardService>();
 
 var app = builder.Build();
 

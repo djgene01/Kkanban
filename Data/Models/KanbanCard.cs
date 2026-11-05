@@ -15,6 +15,8 @@ public class KanbanCard
 
     public int Order { get; set; }
 
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     public bool IsDeleted { get; set; }
 
     public DateTime? ArchivedAt { get; set; }
@@ -23,5 +25,5 @@ public class KanbanCard
 
     public BoardColumn Column { get; set; } = null!;
 
-    public ICollection<CardLabel> Labels { get; set; } = new List<CardLabel>();
+    public ICollection<CardLabel> CardLabels { get; set; } = new List<CardLabel>();
 }

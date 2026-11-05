@@ -1,0 +1,184 @@
+@using Kkanban.Data.Models
+@using Kkanban.Services
+@inject ICardService CardService
+@inject IBoardService BoardService
+
+<div class="kanban-column" data-column-id="@ColumnItem.Id">
+    <div class="column-header" data-column-header="@ColumnItem.Id">
+        <h3 class="column-title">
+            <span class="column-badge">@Cards.Count()</span>
+            @ColumnItem.Title
+            @if (IsDoneColumn)
+            {
+                <span class="done-indicator">&#10003;</span>
+            }
+        </h3>
+        <div class="column-actions">
+            <button class="btn-icon" title="Add Card" @onclick="@(() => ShowEditor("card"))">+</button>
+            <button class="btn-icon" title="Edit Column" @onclick="@(() => ShowEditor("column"))">&#9998;</button>
+        </div>
+    </div>
+
+    <div class="card-list" data-column-cards="@ColumnItem.Id">
+        @if (!Cards.Any())
+        {
+            <div class="empty-column">
+                <p>No cards</p>
+                <button class="btn btn-link" @onclick="@(() => ShowEditor("card"))">+ Add a card</button>
+            </div>
+        }
+        else
+        {
+            @foreach (var card in Cards.OrderBy(c => c.Order))
+            {
+                <KanbanCardView CardItem="@card"
+                      ColumnTitle="@ColumnItem.Title"
+                      OnEditRequested="@(() => OnCardEditRequested(card.Id))"
+                      OnArchiveRequested="@(() => OnArchiveCard(card.Id))" />
+            }
+        }
+    </div>
+
+    @if (editorState != null)
+    {
+        <div class="modal-overlay">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>@(editorState.type == "column" ? "Edit Column" : "Edit Card")</h3>
+                    <button class="btn-close" @onclick="CloseEditor">&times;</button>
+                </div>
+                <div class="modal-body">
+                    @if (editorState.type == "column")
+                    {
+                        <div class="form-group">
+                            <label for="columnName">Column Name</label>
+                            <input type="text" id="columnName" @bind="editorState.columnTitle" @bind:event="oninput" placeholder="Enter column name" maxlength="100" />
+                        </div>
+                    }
+                    else if (editorState.card != null)
+                    {
+                        <div class="form-group">
+                            <label for="cardTitle">Title *</label>
+                            <input type="text" id="cardTitle" @bind="editorState.card.Title" @bind:event="oninput" placeholder="Enter card title" maxlength="200" />
+                        </div>
+                        <div class="form-group">
+                            <label for="cardDescription">Description</label>
+                            <textarea id="cardDescription" @bind="editorState.card.Description" @bind:event="oninput" placeholder="Add a description..." rows="4" maxlength="2000"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="cardAssignee">Assignee</label>
+                            <input type="text" id="cardAssignee" @bind="editorState.card.Assignee" @bind:event="oninput" placeholder="e.g. John Doe" maxlength="100" />
+                        </div>
+                    }
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" @onclick="CloseEditor">Cancel</button>
+                    <button class="btn btn-primary" @onclick="SaveEditor">Save</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public BoardColumn ColumnItem { get; set; } = default!;
+    [Parameter] public IEnumerable<KanbanCard> Cards { get; set; } = Enumerable.Empty<KanbanCard>();
+    [Parameter] public EventCallback<int> OnCardMoved { get; set; }
+    [Parameter] public EventCallback<int> OnCardArchived { get; set; }
+
+    private bool IsDoneColumn => ColumnItem.Title.Contains("Done", StringComparison.OrdinalIgnoreCase);
+    private EditorState? editorState;
+
+    private void ShowEditor(string type, KanbanCard? card = null)
+    {
+        if (type == "column")
+        {
+            editorState = new EditorState { type = "column", columnTitle = ColumnItem.Title };
+        }
+        else
+        {
+            if (card != null)
+            {
+                editorState = new EditorState
+                {
+                    type = "card",
+                    card = new KanbanCard
+                    {
+                        Id = card.Id,
+                        Title = card.Title,
+                        Description = card.Description,
+                        Assignee = card.Assignee,
+                        BoardColumnId = card.BoardColumnId,
+                        CardLabels = card.CardLabels?.ToList() ?? new List<CardLabel>(),
+                        Order = card.Order
+                    }
+                };
+            }
+            else
+            {
+                editorState = new EditorState { type = "card", card = new KanbanCard { BoardColumnId = ColumnItem.Id } };
+            }
+        }
+    }
+
+    private void CloseEditor()
+    {
+        editorState = null;
+    }
+
+    private async Task OnCardEditRequested(int cardId)
+    {
+        var card = await CardService.GetCardAsync(cardId);
+        if (card != null)
+        {
+            ShowEditor("card", card);
+        }
+    }
+
+    private async Task SaveEditor()
+    {
+        if (editorState != null)
+        {
+            if (editorState.type == "column")
+            {
+                await BoardService.RenameColumnAsync(ColumnItem.Id, editorState.columnTitle!);
+            }
+            else if (editorState.card != null)
+            {
+                if (editorState.card.Id == 0)
+                {
+                    var labelIds = editorState.card.CardLabels?.Select(cl => cl.LabelId).ToArray() ?? Array.Empty<int>();
+                    await CardService.CreateCardAsync(ColumnItem.Id, editorState.card.Title, editorState.card.Description, editorState.card.Assignee, labelIds);
+                }
+                else
+                {
+                    var labelIds = editorState.card.CardLabels?.Select(cl => cl.LabelId).ToArray() ?? Array.Empty<int>();
+                    await CardService.UpdateCardAsync(editorState.card, labelIds);
+                }
+                await LoadBoardData();
+            }
+        }
+        CloseEditor();
+    }
+
+    private async Task OnArchiveCard(int cardId)
+    {
+        await CardService.ArchiveCardAsync(cardId);
+        await OnCardArchived.InvokeAsync(cardId);
+        await LoadBoardData();
+    }
+
+    private async Task LoadBoardData()
+    {
+        var updatedCards = await CardService.GetCardsByColumnAsync(ColumnItem.Id);
+        Cards = updatedCards;
+        StateHasChanged();
+    }
+
+    private class EditorState
+    {
+        public string type = "";
+        public string? columnTitle;
+        public KanbanCard? card;
+    }
+}
