@@ -1,32 +1,55 @@
 @using Kkanban.Data.Models
 
-<div class="kanban-card" draggable="true">
-    <div class="card-labels">
-        @if (CardItem.CardLabels != null && CardItem.CardLabels.Any())
-        {
+<div class="card-animate bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-slate-200/20 overflow-hidden cursor-grab active:cursor-grabbing">
+    <!-- Labels -->
+    @if (CardItem.CardLabels != null && CardItem.CardLabels.Any())
+    {
+        <div class="flex flex-wrap gap-1 p-3 pb-0">
             @foreach (var cl in CardItem.CardLabels)
             {
-                <span class="card-label" style="background-color: @cl.Label.Colour; color: white;">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white" 
+                      style="background-color: @cl.Label.Colour;">
                     @cl.Label.Name
                 </span>
             }
+        </div>
+    }
+    
+    <!-- Card Body -->
+    <div class="p-3 pt-0">
+        <div class="font-semibold text-slate-900 text-base leading-tight mb-1">
+            @CardItem.Title
+        </div>
+        @if (!string.IsNullOrEmpty(CardItem.Description))
+        {
+            <div class="text-sm text-slate-600 line-clamp-2 mb-2">
+                @CardItem.Description
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(CardItem.Assignee))
+        {
+            <div class="flex items-center gap-1 text-sm text-slate-500 mb-2">
+                <span>👤</span>
+                <span>@CardItem.Assignee</span>
+            </div>
         }
     </div>
-    <div class="card-title">@CardItem.Title</div>
-    @if (!string.IsNullOrEmpty(CardItem.Description))
-    {
-        <div class="card-description">@CardItem.Description</div>
-    }
-    @if (!string.IsNullOrEmpty(CardItem.Assignee))
-    {
-        <div class="card-assignee">&#128100; @CardItem.Assignee</div>
-    }
-    <div class="card-footer">
-        <button class="card-btn btn-icon" title="Edit" @onclick="() => OnEditClick()">&#9998;</button>
-        <button class="card-btn btn-icon" title="Archive" @onclick="() => OnArchiveClick()">&#128465;</button>
+    
+    <!-- Card Footer -->
+    <div class="flex items-center justify-between px-3 py-2 border-t border-slate-200/20 bg-slate-50/50">
+        <div class="flex gap-1">
+            <button class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors duration-200" 
+                    title="Edit" @onclick="@(() => OnEditClick())">
+                ✎
+            </button>
+            <button class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200" 
+                    title="Archive" @onclick="@(() => OnArchiveClick())">
+                🗑
+            </button>
+        </div>
         @if (ColumnTitle?.Contains("Done", StringComparison.OrdinalIgnoreCase) == true)
         {
-            <span class="done-badge">&#10003;</span>
+            <span class="text-green-600 font-medium text-sm">✓</span>
         }
     </div>
 </div>

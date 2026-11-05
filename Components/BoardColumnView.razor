@@ -3,81 +3,92 @@
 @inject ICardService CardService
 @inject IBoardService BoardService
 
-<div class="kanban-column" data-column-id="@ColumnItem.Id">
-    <div class="column-header" data-column-header="@ColumnItem.Id">
-        <h3 class="column-title">
-            <span class="column-badge">@Cards.Count()</span>
-            @ColumnItem.Title
-            @if (IsDoneColumn)
-            {
-                <span class="done-indicator">&#10003;</span>
-            }
-        </h3>
-        <div class="column-actions">
-            <button class="btn-icon" title="Add Card" @onclick="@(() => ShowEditor("card"))">+</button>
-            <button class="btn-icon" title="Edit Column" @onclick="@(() => ShowEditor("column"))">&#9998;</button>
-        </div>
-    </div>
-
-    <div class="card-list" data-column-cards="@ColumnItem.Id">
-        @if (!Cards.Any())
-        {
-            <div class="empty-column">
-                <p>No cards</p>
-                <button class="btn btn-link" @onclick="@(() => ShowEditor("card"))">+ Add a card</button>
-            </div>
-        }
-        else
-        {
-            @foreach (var card in Cards.OrderBy(c => c.Order))
-            {
-                <KanbanCardView CardItem="@card"
-                      ColumnTitle="@ColumnItem.Title"
-                      OnEditRequested="@(() => OnCardEditRequested(card.Id))"
-                      OnArchiveRequested="@(() => OnArchiveCard(card.Id))" />
-            }
-        }
-    </div>
-
-    @if (editorState != null)
-    {
-        <div class="modal-overlay">
-            <div class="modal">
-                <div class="modal-header">
-                    <h3>@(editorState.type == "column" ? "Edit Column" : "Edit Card")</h3>
-                    <button class="btn-close" @onclick="CloseEditor">&times;</button>
-                </div>
-                <div class="modal-body">
-                    @if (editorState.type == "column")
+<div class="min-w-[280px] w-72 flex-shrink-0">
+    <div class="bg-slate-800 rounded-xl shadow-xl overflow-hidden border border-slate-700/50">
+        <!-- Column Header -->
+        <div class="bg-gradient-to-r from-slate-700 to-slate-600 p-4 border-b border-slate-700/50">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-white font-semibold text-lg flex items-center gap-2">
+                    <span class="bg-indigo-500 text-white text-xs px-2 py-0.5 rounded-full min-w-[1.5rem] text-center">@Cards.Count()</span>
+                    @ColumnItem.Title
+                    @if (IsDoneColumn)
                     {
-                        <div class="form-group">
-                            <label for="columnName">Column Name</label>
-                            <input type="text" id="columnName" @bind="editorState.columnTitle" @bind:event="oninput" placeholder="Enter column name" maxlength="100" />
-                        </div>
+                        <span class="text-green-400 text-sm">✓</span>
                     }
-                    else if (editorState.card != null)
-                    {
-                        <div class="form-group">
-                            <label for="cardTitle">Title *</label>
-                            <input type="text" id="cardTitle" @bind="editorState.card.Title" @bind:event="oninput" placeholder="Enter card title" maxlength="200" />
-                        </div>
-                        <div class="form-group">
-                            <label for="cardDescription">Description</label>
-                            <textarea id="cardDescription" @bind="editorState.card.Description" @bind:event="oninput" placeholder="Add a description..." rows="4" maxlength="2000"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="cardAssignee">Assignee</label>
-                            <input type="text" id="cardAssignee" @bind="editorState.card.Assignee" @bind:event="oninput" placeholder="e.g. John Doe" maxlength="100" />
-                        </div>
-                    }
-                </div>
-                <div class="modal-actions">
-                    <button class="btn btn-secondary" @onclick="CloseEditor">Cancel</button>
-                    <button class="btn btn-primary" @onclick="SaveEditor">Save</button>
+                </h3>
+                <div class="flex gap-1">
+                    <button class="w-8 h-8 flex items-center justify-center bg-slate-600/50 hover:bg-slate-600 rounded-lg transition-colors duration-200 text-slate-300 hover:text-white" title="Add Card" @onclick="@(() => ShowEditor("card"))">+</button>
+                    <button class="w-8 h-8 flex items-center justify-center bg-slate-600/50 hover:bg-slate-600 rounded-lg transition-colors duration-200 text-slate-300 hover:text-white" title="Edit Column" @onclick="@(() => ShowEditor("column"))">✎</button>
                 </div>
             </div>
         </div>
-    }
+
+        <!-- Card List -->
+        <div class="p-3 space-y-3 min-h-[100px] overflow-y-auto max-h-[calc(100vh-250px)] custom-scrollbar" data-column-cards="@ColumnItem.Id">
+            @if (!Cards.Any())
+            {
+                <div class="text-center py-8">
+                    <p class="text-slate-500 text-sm mb-3">No cards</p>
+                    <button class="px-3 py-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-400 hover:text-white text-sm rounded-lg transition-colors duration-200" @onclick="@(() => ShowEditor("card"))">+ Add a card</button>
+                </div>
+            }
+            else
+            {
+                @foreach (var card in Cards.OrderBy(c => c.Order))
+                {
+                    <KanbanCardView CardItem="@card"
+                          ColumnTitle="@ColumnItem.Title"
+                          OnEditRequested="@(() => OnCardEditRequested(card.Id))"
+                          OnArchiveRequested="@(() => OnArchiveCard(card.Id))" />
+                }
+            }
+        </div>
+
+        <!-- Editor Modal -->
+        @if (editorState != null)
+        {
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" @onclick="CloseEditor">
+                <div class="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md mx-4" @onclick:stopPropagation>
+                    <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                        <h3 class="text-xl font-semibold text-white">@(editorState.type == "column" ? "Edit Column" : "Edit Card")</h3>
+                        <button class="text-slate-400 hover:text-white text-2xl leading-none" @onclick="CloseEditor">&times;</button>
+                    </div>
+                    <div class="p-6">
+                        @if (editorState.type == "column")
+                        {
+                            <div class="mb-4">
+                                <label for="columnName" class="block text-sm font-medium text-slate-300 mb-2">Column Name</label>
+                                <input type="text" id="columnName" @bind="editorState.columnTitle" @bind:event="oninput" placeholder="Enter column name" maxlength="100" 
+                                       class="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+                            </div>
+                        }
+                        else if (editorState.card != null)
+                        {
+                            <div class="mb-4">
+                                <label for="cardTitle" class="block text-sm font-medium text-slate-300 mb-2">Title *</label>
+                                <input type="text" id="cardTitle" @bind="editorState.card.Title" @bind:event="oninput" placeholder="Enter card title" maxlength="200" 
+                                       class="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+                            </div>
+                            <div class="mb-4">
+                                <label for="cardDescription" class="block text-sm font-medium text-slate-300 mb-2">Description</label>
+                                <textarea id="cardDescription" @bind="editorState.card.Description" @bind:event="oninput" placeholder="Add a description..." rows="4" maxlength="2000"
+                                          class="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"></textarea>
+                            </div>
+                            <div class="mb-4">
+                                <label for="cardAssignee" class="block text-sm font-medium text-slate-300 mb-2">Assignee</label>
+                                <input type="text" id="cardAssignee" @bind="editorState.card.Assignee" @bind:event="oninput" placeholder="e.g. John Doe" maxlength="100" 
+                                       class="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+                            </div>
+                        }
+                    </div>
+                    <div class="flex justify-end gap-3 p-6 border-t border-slate-700">
+                        <button class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors duration-200" @onclick="CloseEditor">Cancel</button>
+                        <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors duration-200" @onclick="SaveEditor">Save</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 </div>
 
 @code {

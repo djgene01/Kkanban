@@ -5,22 +5,29 @@
 @inject ICardService CardService
 @rendermode InteractiveServer
 
-<div class="kanban-app">
-    <div class="kanban-board">
-        <div class="board-toolbar">
-            <h1 class="board-title">&#128203; Kanban Board</h1>
-            <button class="btn btn-primary" @onclick="OnAddColumn">+ Add Column</button>
+<div class="min-h-screen bg-slate-900 p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Toolbar -->
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-white bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+                📋 Kanban Board
+            </h1>
+            <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors duration-200" @onclick="OnAddColumn">
+                + Add Column
+            </button>
         </div>
 
+        <!-- Empty State -->
         @if (columns == null || !columns.Any())
         {
-            <div class="empty-state">
-                <p>No columns yet. Click "+ Add Column" to get started.</p>
+            <div class="text-center py-20">
+                <p class="text-slate-400 text-lg">No columns yet. Click <strong class="text-indigo-400">"+ Add Column"</strong> to get started.</p>
             </div>
         }
         else
         {
-            <div class="board-columns">
+            <!-- Board -->
+            <div class="flex gap-4 overflow-x-auto pb-4">
                 @foreach (var column in columns.OrderBy(c => c.Order))
                 {
                     var columnCards = cardsByColumn.GetValueOrDefault(column.Id, Enumerable.Empty<KanbanCard>());
@@ -29,23 +36,25 @@
             </div>
         }
 
+        <!-- Add Column Modal -->
         @if (showAddColumn)
         {
-            <div class="modal-overlay">
-                <div class="modal">
-                    <div class="modal-header">
-                        <h3>Add New Column</h3>
-                        <button class="btn-close" @onclick="CloseAddColumn">&times;</button>
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" @onclick="CloseAddColumn">
+                <div class="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md mx-4" @onclick:stopPropagation>
+                    <div class="flex items-center justify-between p-6 border-b border-slate-700">
+                        <h3 class="text-xl font-semibold text-white">Add New Column</h3>
+                        <button class="text-slate-400 hover:text-white text-2xl leading-none" @onclick="CloseAddColumn">&times;</button>
                     </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="newColumnTitle">Column Name</label>
-                            <input type="text" id="newColumnTitle" @bind="newColumnName" @bind:event="oninput" placeholder="e.g. Review" />
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <label for="newColumnTitle" class="block text-sm font-medium text-slate-300 mb-2">Column Name</label>
+                            <input type="text" id="newColumnTitle" @bind="newColumnName" @bind:event="oninput" placeholder="e.g. Review" 
+                                   class="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                         </div>
                     </div>
-                    <div class="modal-actions">
-                        <button class="btn btn-secondary" @onclick="CloseAddColumn">Cancel</button>
-                        <button class="btn btn-primary" @onclick="SubmitAddColumn" disabled="@string.IsNullOrWhiteSpace(newColumnName)">Add</button>
+                    <div class="flex justify-end gap-3 p-6 border-t border-slate-700">
+                        <button class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors duration-200" @onclick="CloseAddColumn">Cancel</button>
+                        <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed" @onclick="SubmitAddColumn" disabled="@(string.IsNullOrWhiteSpace(newColumnName))">Add</button>
                     </div>
                 </div>
             </div>
